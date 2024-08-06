@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(
-	BoneManipulation
-	VERSION 0.7.5
+	NodeManipulator
+	VERSION 0.1.0
 	LANGUAGES CXX
 )
 
