@@ -1,17 +1,28 @@
 #include "Hooks.h"
+#include "OverrideManager.h"
+
+
+void ApplyRotation(RE::NiAVObject* a_obj, std::string a_name, RE::NiMatrix3 a_rot)
+{
+	if (!a_obj)
+		return;
+
+	if (const auto node = a_obj->GetObjectByName(a_name)) {
+		node->local.rotate = a_rot;
+	}
+}
 
 void ApplyOffsets(RE::NiAVObject* a_obj)
 {
-	const RE::NiMatrix3 rot{};
-	if (const auto node = a_obj->GetObjectByName("NPC L UpperArm [LUar]"))
-		node->local.rotate = rot;
+	for (const auto [name, rot] : OverrideManager::overrides) {
+		ApplyRotation(a_obj, name, rot);
+	}
 }
 
-void UpdateArmOffsets(RE::NiAVObject* a_obj, RE::NiUpdateData* a_update)
+void UpdateArmOffsets(RE::NiAVObject* a_obj, RE::NiUpdateData*)
 {
 	ApplyOffsets(a_obj);
-
-	RE::ProcessLists::GetSingleton()->ForEachHighActor([a_update](RE::Actor* a_actor) {
+	RE::ProcessLists::GetSingleton()->ForEachHighActor([](RE::Actor* a_actor) {
 		if (!a_actor->Is3DLoaded() || a_actor->GetActorBase()->GetSex() == RE::SEX::kMale)
 			return RE::BSContainer::ForEachResult::kContinue;
 

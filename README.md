@@ -1,6 +1,6 @@
 # Node Manipulator
 
-Allows runtime patching of animations through node manipulation.
+Allows runtime patching of animations through raw node manipulation.
 
 ## Requirements
 

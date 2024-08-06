@@ -1,4 +1,6 @@
 #include "Hooks.h"
+#include "Papyrus.h"
+#include "OverrideManager.h"
 
 void InitializeLog([[maybe_unused]] spdlog::level::level_enum a_level = spdlog::level::info)
 {
@@ -30,7 +32,11 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	logger::info("Loaded plugin {} {}", Plugin::NAME, Plugin::VERSION.string());
 	SKSE::Init(a_skse);
 
+	OverrideManager::Init();
 	Hooks::Install();
+
+	const auto papyrus = SKSE::GetPapyrusInterface();
+	papyrus->Register(Papyrus::RegisterFunctions);
 
 	return true;
 }
