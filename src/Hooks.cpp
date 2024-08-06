@@ -1,26 +1,49 @@
 #include "Hooks.h"
 
-void Hooks::Install()
+void UpdateArmOffsets(RE::NiAVObject* a_obj, RE::NiUpdateData* a_update)
 {
-	REL::Relocation<std::uintptr_t> target{ REL::RelocationID(19316, 19743), REL::VariantOffset(0x0, 0x0, 0x0) };
+	const RE::NiMatrix3 rot{};
+	a_obj->GetObjectByName("NPC L UpperArm [LUar]")->local.rotate = rot;
 
-	const uintptr_t addr = target.address();
+	RE::ProcessLists::GetSingleton()->ForEachHighActor([a_update, rot](RE::Actor* a_actor) {
+		if (const auto obj = a_actor->Get3D(false)) {
+			if (const auto node = obj->GetObjectByName("NPC L UpperArm [LUar]")) {
+				node->local.rotate = rot;
 
-	_Update3D = (Update3DType)addr;
-	DetourTransactionBegin();
-	DetourUpdateThread(GetCurrentThread());
-	DetourAttach(&(PVOID&)_Update3D, (PBYTE)&Update3D);
+				RE::NiUpdateData updateData{
+					0.f,
+					RE::NiUpdateData::Flag::kDirty
+				};
 
-	if (DetourTransactionCommit() == NO_ERROR) {
-		logger::info("Installed hook on Update3D");
-	} else {
-		logger::info("Failed to install hook on Update3D");
-	}
+				obj->Update(updateData);
+			}
+		}
+
+		return RE::BSContainer::ForEachResult::kContinue;
+	});
 }
 
-bool Hooks::Update3D(RE::Actor* a_actor)
+struct UpdateFirstPerson
 {
-	logger::info("Hooks:Update3D");
+	static void thunk(RE::NiAVObject* firstpersonObject, RE::NiUpdateData* updateData)
+	{
+		auto camera = RE::PlayerCamera::GetSingleton();
+		bool mapMenu = RE::UI::GetSingleton()->IsMenuOpen("MapMenu");
 
-	return _Update3D(a_actor);
+		if (camera->IsInFreeCameraMode() || mapMenu) {
+			func(firstpersonObject, updateData);
+			return;
+		}
+
+		UpdateArmOffsets(firstpersonObject, updateData);
+		func(firstpersonObject, updateData);
+	}
+	static inline REL::Relocation<decltype(thunk)> func;
+	static inline constexpr std::size_t size{ 5 };
+};
+
+void Hooks::Install()
+{
+	stl::write_thunk_call<UpdateFirstPerson>(REL::RelocationID(39446, 40522).address() + 0x94);
+	logger::info("Hooks installed");
 }
