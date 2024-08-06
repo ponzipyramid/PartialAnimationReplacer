@@ -1,4 +1,4 @@
-#define DLLEXPORT __declspec(dllexport)
+#include "Hooks.h"
 
 void InitializeLog([[maybe_unused]] spdlog::level::level_enum a_level = spdlog::level::info)
 {
@@ -29,6 +29,9 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	InitializeLog();
 	logger::info("Loaded plugin {} {}", Plugin::NAME, Plugin::VERSION.string());
 	SKSE::Init(a_skse);
+
+	Hooks::Install();
+
 	return true;
 }
 
