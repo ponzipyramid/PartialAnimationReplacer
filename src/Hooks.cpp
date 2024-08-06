@@ -12,6 +12,9 @@ void UpdateArmOffsets(RE::NiAVObject* a_obj, RE::NiUpdateData* a_update)
 	ApplyOffsets(a_obj);
 
 	RE::ProcessLists::GetSingleton()->ForEachHighActor([a_update](RE::Actor* a_actor) {
+		if (!a_actor->Is3DLoaded() || a_actor->GetActorBase()->GetSex() == RE::SEX::kMale)
+			return RE::BSContainer::ForEachResult::kContinue;
+
 		if (const auto obj = a_actor->Get3D(false)) {
 			ApplyOffsets(obj);
 			RE::NiUpdateData updateData{
