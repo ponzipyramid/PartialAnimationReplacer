@@ -10,5 +10,7 @@ class OverrideManager
 {
 public:
 	static void Init();
+	static void ApplyOverrides(RE::NiAVObject* a_obj);
+private:
 	static inline std::vector<Override> overrides;
 };

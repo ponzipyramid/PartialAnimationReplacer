@@ -9,6 +9,13 @@ namespace
 		OverrideManager::Init();
 		return;
 	}
+
+	inline void DumpRotation(RE::StaticFunctionTag*, RE::Actor* a_actor)
+	{
+		if (const auto obj = a_actor->Get3D(false)) {
+			
+		}
+	}
 }
 
 namespace Papyrus
@@ -18,4 +25,4 @@ namespace Papyrus
 		vm->RegisterFunction("Reload", PapyrusClass, Reload);
 		return true;
 	}
-};
+}

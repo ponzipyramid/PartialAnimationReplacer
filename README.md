@@ -1,4 +1,4 @@
-# Node Manipulator
+# Partial Animation Replacer
 
 Allows runtime patching of animations through raw node manipulation.
 

@@ -17,11 +17,15 @@ void OverrideManager::Init()
 
 		const RE::NiMatrix3 rot{ x, y, z };
 
-		//logger::info("{} - [{}, {}, {}] [{}, {}, {}] [{}, {}, {}]", nodeName, rot.entry[0][0], rot.entry[0][1], rot.entry[0][2], rot.entry[1][0], rot.entry[1][1], rot.entry[1][2], rot.entry[2][0], rot.entry[2][1], rot.entry[2][2]);
-
-		logger::info("Loaded override: {} = ({}, {}, {})", nodeName, x, y, z);
-
 		const Override nodeOverride{ nodeName, rot };
 		overrides.push_back(nodeOverride);
+	}
+}
+
+void OverrideManager::ApplyOverrides(RE::NiAVObject* a_obj) {
+	if (const auto ref = a_obj->GetUserData()) {
+		if (const auto actor = ref->As<RE::Actor>()) {
+
+		}
 	}
 }

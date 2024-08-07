@@ -1,33 +1,15 @@
 #include "Hooks.h"
 #include "OverrideManager.h"
 
-
-void ApplyRotation(RE::NiAVObject* a_obj, std::string a_name, RE::NiMatrix3 a_rot)
-{
-	if (!a_obj)
-		return;
-
-	if (const auto node = a_obj->GetObjectByName(a_name)) {
-		node->local.rotate = a_rot;
-	}
-}
-
-void ApplyOffsets(RE::NiAVObject* a_obj)
-{
-	for (const auto [name, rot] : OverrideManager::overrides) {
-		ApplyRotation(a_obj, name, rot);
-	}
-}
-
 void UpdateArmOffsets(RE::NiAVObject* a_obj, RE::NiUpdateData*)
 {
-	ApplyOffsets(a_obj);
+	OverrideManager::ApplyOverrides(a_obj);
 	RE::ProcessLists::GetSingleton()->ForEachHighActor([](RE::Actor* a_actor) {
 		if (!a_actor->Is3DLoaded() || a_actor->GetActorBase()->GetSex() == RE::SEX::kMale)
 			return RE::BSContainer::ForEachResult::kContinue;
 
 		if (const auto obj = a_actor->Get3D(false)) {
-			ApplyOffsets(obj);
+			OverrideManager::ApplyOverrides(obj);
 			RE::NiUpdateData updateData{
 				0.f,
 				RE::NiUpdateData::Flag::kDirty
