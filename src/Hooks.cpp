@@ -1,47 +1,44 @@
 #include "Hooks.h"
-#include "OverrideManager.h"
+#include "ReplacerManager.h"
 
-void UpdateArmOffsets(RE::NiAVObject* a_obj, RE::NiUpdateData*)
+using namespace PAR;
+
+namespace
 {
-	OverrideManager::ApplyOverrides(a_obj);
-	RE::ProcessLists::GetSingleton()->ForEachHighActor([](RE::Actor* a_actor) {
-		if (!a_actor->Is3DLoaded() || a_actor->GetActorBase()->GetSex() == RE::SEX::kMale)
-			return RE::BSContainer::ForEachResult::kContinue;
+	constexpr float TIME_DELTA = 2.f;
 
-		if (const auto obj = a_actor->Get3D(false)) {
-			OverrideManager::ApplyOverrides(obj);
-			RE::NiUpdateData updateData{
-				0.f,
-				RE::NiUpdateData::Flag::kDirty
-			};
-
-			obj->Update(updateData);
-		}
-
-		return RE::BSContainer::ForEachResult::kContinue;
-	});
-}
-
-struct UpdateThirdPerson
-{
-	static void thunk(RE::NiAVObject* a_obj, RE::NiUpdateData* updateData)
+	struct UpdateThirdPerson
 	{
-		bool mapMenu = RE::UI::GetSingleton()->IsMenuOpen("MapMenu");
-
-		if (mapMenu) {
+		static void thunk(RE::NiAVObject* a_obj, RE::NiUpdateData* updateData)
+		{
+			ReplacerManager::ApplyReplacers(a_obj);
 			func(a_obj, updateData);
-			return;
 		}
-
-		UpdateArmOffsets(a_obj, updateData);
-		func(a_obj, updateData);
-	}
-	static inline REL::Relocation<decltype(thunk)> func;
-	static inline constexpr std::size_t size{ 5 };
-};
+		static inline REL::Relocation<decltype(thunk)> func;
+		static inline constexpr std::size_t size{ 5 };
+	};
+}
 
 void Hooks::Install()
 {
 	stl::write_thunk_call<UpdateThirdPerson>(REL::RelocationID(39446, 40522).address() + 0x94);
+
+	REL::Relocation<std::uintptr_t> vtbl1{ RE::PlayerCharacter::VTABLE[0] };
+	_UpdatePlayer = vtbl1.write_vfunc(REL::Module::GetRuntime() != REL::Module::Runtime::VR ? 0x0AD : 0x0AF, UpdatePlayer);
+
 	logger::info("Hooks installed");
+}
+
+void Hooks::UpdatePlayer(RE::Actor* a_actor, float a_delta)
+{
+	_UpdatePlayer(a_actor, a_delta);
+	_lastUpdated += a_delta;
+	if (_lastUpdated >= TIME_DELTA) {
+		
+		std::thread([]() {
+			ReplacerManager::EvaluateReplacers();
+		}).detach();
+
+		_lastUpdated = 0.f;
+	}
 }
