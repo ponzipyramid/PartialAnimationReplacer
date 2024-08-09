@@ -33,12 +33,13 @@ void Hooks::UpdatePlayer(RE::Actor* a_actor, float a_delta)
 {
 	_UpdatePlayer(a_actor, a_delta);
 	_lastUpdated += a_delta;
-	if (_lastUpdated >= TIME_DELTA) {
-		
+
+	if (!_loaded || _lastUpdated >= TIME_DELTA) {
+		_loaded = true;
+		_lastUpdated = 0.f;
+
 		std::thread([]() {
 			ReplacerManager::EvaluateReplacers();
 		}).detach();
-
-		_lastUpdated = 0.f;
 	}
 }

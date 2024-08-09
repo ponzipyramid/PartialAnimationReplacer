@@ -112,4 +112,3 @@ using uint = uint32_t;
 namespace fs = std::filesystem;
 
 #define DLLEXPORT __declspec(dllexport)
-

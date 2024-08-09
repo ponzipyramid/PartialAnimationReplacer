@@ -83,43 +83,100 @@ void ReplacerManager::Init()
 				continue;
 			}
 
-			logger::info("Processing directory {}", entry.path().string());
-
-			int found = 0;
-			for (const auto& file : fs::directory_iterator(entry)) {
-				if (file.is_directory())
-					continue;
-
-				logger::info("Processing file {}", file.path().string());
-
-				const auto ext = file.path().extension();
-
-				if (ext != ".json")
-					continue;
-
-				const std::string fileName{ file.path().string() };
-
-				try {
-					logger::info("loading {}", fileName);
-
-					std::ifstream f{ fileName };
-					const auto data = json::parse(f);
-					const auto r = data.get<RawReplacer>();
-
-					Replacer replacer{ r };
-					if (replacer.IsValid(fileName)) {
-						found++;
-						_replacers.push_back(replacer);
-					}
-				} catch (std::exception& e) {
-					logger::info("failed to load {} - {}", fileName, e.what());
-				}
-
-				
-			}
-			logger::info("loaded {} replacer from directory {}", found, entry.path().string());
+			LoadDir(entry);
 		}
 	} else {
 		logger::info("replacement dir does not exist");
 	}
+}
+
+void ReplacerManager::LoadDir(const fs::directory_entry& a_dir)
+{
+	logger::info("Processing directory {}", a_dir.path().string());
+	int found = 0;
+	for (const auto& file : fs::directory_iterator(a_dir)) {
+		if (file.is_directory())
+			continue;
+
+		found += (int)LoadFile(file);
+	}
+	logger::info("loaded {} replacer from directory {}", found, a_dir.path().string());
+}
+
+bool ReplacerManager::LoadFile(const fs::directory_entry& a_file)
+{
+	logger::info("Processing file {}", a_file.path().string());
+
+	const auto ext = a_file.path().extension();
+
+	if (ext != ".json")
+		return false;
+
+	const std::string fileName{ a_file.path().string() };
+
+	try {
+		logger::info("loading {}", fileName);
+
+		std::ifstream f{ fileName };
+		const auto data = json::parse(f);
+		const auto r = data.get<ReplacerData>();
+
+		Replacer replacer{ r };
+		if (replacer.IsValid(fileName)) {
+			if (_paths.count(fileName)) {
+				_replacers[_paths[fileName]] = replacer;
+			} else {
+				_paths[fileName] = _replacers.size();
+				_replacers.push_back(replacer);
+			}
+		} else if (_paths.count(fileName)) {
+			_replacers.erase(_replacers.begin() + _paths[fileName]);
+			_paths.erase(fileName);
+		}
+
+		return true;
+	} catch (std::exception& e) {
+		logger::info("failed to load {} - {}", fileName, e.what());
+
+		return false;
+	}
+}
+
+void ReplacerManager::LoadNodes()
+{
+	const std::string fileName{ "Data\\SKSE\\PartialAnimationReplacer\\Config\\arm_nodes.json" };
+	std::ifstream f{ fileName };
+	const auto data = json::parse(f);
+	_armNodes = data.get<std::vector<std::string>>();
+}
+
+void ReplacerManager::Dump(RE::Actor* a_actor, std::string a_dir, std::string a_name)
+{
+	// TODO: add support for multiple frames
+
+	// create RawReplacer and read/write to JSON
+	//
+
+	const std::string fileName{ "Data\\SKSE\\PartialAnimationReplacer\\Replacers\\" + a_dir + "\\" + a_name };
+
+	ReplacerData data = _paths.count(fileName) ? _replacers[_paths[fileName]].GetData() : ReplacerData();
+
+	data.frames.clear();
+
+	Frame frame;
+
+	if (const auto obj = a_actor->Get3D(false)) {
+		for (const auto& nodeName : _armNodes) {
+			if (const auto node = obj->GetObjectByName(nodeName)) {
+				frame.emplace_back(Override{ nodeName, node->local.rotate });
+			}
+		}
+	}
+
+	data.frames.emplace_back(frame);
+
+	json j = data;
+
+	std::ofstream file(fileName);
+	file << j;
 }

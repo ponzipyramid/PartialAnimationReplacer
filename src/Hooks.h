@@ -11,6 +11,7 @@ namespace PAR
 		static void UpdatePlayer(RE::Actor* a_actor, float a_delta);
 		static inline REL::Relocation<decltype(UpdatePlayer)> _UpdatePlayer;
 
-		static inline float _lastUpdated;
+		static inline float _lastUpdated = 0.f;
+		static inline bool _loaded = false;
 	};
 }

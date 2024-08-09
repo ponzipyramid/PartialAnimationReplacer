@@ -11,7 +11,7 @@ namespace PAR
 
 	typedef std::vector<Override> Frame;
 
-	struct RawReplacer
+	struct ReplacerData
 	{
 		uint64_t priority;
 		std::vector<Frame> frames;
@@ -20,10 +20,14 @@ namespace PAR
 	class Replacer
 	{
 	public:
-		Replacer(const RawReplacer& a_raw)
+		Replacer(const ReplacerData& a_raw)
 		{
 			_priority = a_raw.priority;
 			_frames = a_raw.frames;
+		}
+		inline ReplacerData GetData()
+		{
+			return ReplacerData{ _priority, _frames };
 		}
 		inline void Apply(RE::NiAVObject* a_obj) const
 		{
@@ -82,9 +86,22 @@ namespace PAR
 		o.rot = RE::NiMatrix3{ x, y, z };
 	}
 
-	inline void from_json(const json& j, RawReplacer& r)
+	inline void to_json(json& j, const Override& o)
+	{
+		float x, y, z;
+		o.rot.ToEulerAnglesXYZ(x, y, z);
+
+		j = json{ { "name", o.name }, { "x", x }, { "y", y }, { "z", z } };
+	}
+
+	inline void from_json(const json& j, ReplacerData& r)
 	{
 		r.priority = j.value("priority", 0);
 		r.frames = j.value("frames", std::vector<Frame>{});
+	}
+
+	inline void to_json(json& j, const ReplacerData& r)
+	{
+		j = json{ { "priority", r.priority }, { "frames", r.frames } };
 	}
 }
