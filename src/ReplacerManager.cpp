@@ -19,7 +19,7 @@ void ReplacerManager::EvaluateReplacers()
 
 	for (const auto& actor : actors) {
 		if (const auto replacer = FindReplacer(actor)) {
-			replacers->insert({ actor->GetFormID(), std::make_shared<Replacer>(replacer->GetData()) });
+			replacers->insert({ actor->GetFormID(), replacer });
 		}
 	}
 	
@@ -132,13 +132,13 @@ bool ReplacerManager::LoadFile(const fs::directory_entry& a_file)
 		const auto data = json::parse(f);
 		const auto r = data.get<ReplacerData>();
 
-		Replacer replacer{ r };
-		if (replacer.IsValid(fileName)) {
+		const auto replacer = std::make_shared<Replacer>(r);
+		if (replacer->IsValid(fileName)) {
 			if (_paths.count(fileName)) {
-				_replacers[_paths[fileName]] = std::make_shared<Replacer>(r);
+				_replacers[_paths[fileName]] = replacer;
 			} else {
 				_paths[fileName] = _replacers.size();
-				_replacers.push_back(std::make_shared<Replacer>(r));
+				_replacers.push_back(replacer);
 			}
 		} else if (_paths.count(fileName)) {
 			_replacers.erase(_replacers.begin() + _paths[fileName]);
@@ -165,12 +165,18 @@ bool ReplacerManager::Dump(RE::Actor* a_actor, std::string a_dir, std::string a_
 {
 	// TODO: add support for multiple frames
 
-	// create RawReplacer and read/write to JSON
-	//
+	ReplacerData data;
 
 	const std::string fileName{ "Data\\SKSE\\PartialAnimationReplacer\\Replacers\\" + a_dir + "\\" + a_name };
-
-	ReplacerData data = _paths.count(fileName) ? _replacers[_paths[fileName]]->GetData() : ReplacerData();
+	const fs::directory_entry entry{ fileName };
+	if (entry.exists()) {
+		try {
+			std::ifstream f{ fileName };
+			json d;
+			const auto existingData = json::parse(f);
+			data = existingData.get<ReplacerData>();
+		} catch (...) {}
+	}
 
 	data.frames.clear();
 

@@ -30,16 +30,14 @@ namespace PAR
 			_priority = a_raw.priority;
 			_frames = a_raw.frames;
 			
-			_rawRefs = a_raw.refs;
-			for (const auto& [key, ref] : _rawRefs) {
+			for (const auto& [key, ref] : a_raw.refs) {
 				_refs[key] = Util::GetFormFromString(ref);
 			}
 			
-			_rawConditions = a_raw.conditions;
 			auto condition = std::make_shared<RE::TESCondition>();
 			RE::TESConditionItem** head = std::addressof(condition->head);
 			int numConditions = 0;
-			for (auto& text : _rawConditions) {
+			for (auto& text : a_raw.conditions) {
 				if (text.empty())
 					continue;
 
@@ -58,7 +56,7 @@ namespace PAR
 		}
 		inline ReplacerData GetData()
 		{
-			return ReplacerData{ _priority, _frames, _rawConditions, _rawRefs };
+			return ReplacerData{ _priority, _frames };
 		}
 		inline void Apply(RE::NiAVObject* a_obj) const
 		{
@@ -110,10 +108,7 @@ namespace PAR
 		uint64_t _priority;
 		std::vector<std::vector<Override>> _frames;
 
-		std::vector<std::string> _rawConditions;
 		std::shared_ptr<RE::TESCondition> _conditions = nullptr;
-
-		std::unordered_map<std::string, std::string> _rawRefs;
 		ConditionParser::RefMap _refs;
 	};
 

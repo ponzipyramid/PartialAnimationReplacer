@@ -5,7 +5,7 @@ using namespace PAR;
 
 namespace
 {
-	constexpr float TIME_DELTA = 2.f;
+	constexpr float TIME_DELTA = 1.f;
 
 	struct UpdateThirdPerson
 	{
