@@ -105,7 +105,7 @@ using json = nlohmann::json;
 
 #include "SimpleMath.h"
 
-#include <detours/detours.h>
+#include <srell.hpp>
 
 using uint = uint32_t;
 

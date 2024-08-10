@@ -28,14 +28,25 @@ void InitializeLog([[maybe_unused]] spdlog::level::level_enum a_level = spdlog::
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [%t] [%s:%#] %v");
 }
 
+
+void Listener(SKSE::MessagingInterface::Message* message) noexcept
+{
+	if (message->type == SKSE::MessagingInterface::kDataLoaded) {
+		ReplacerManager::Init();
+	}
+}
+
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
 	InitializeLog();
 	logger::info("Loaded plugin {} {}", Plugin::NAME, Plugin::VERSION.string());
 	SKSE::Init(a_skse);
 
-	ReplacerManager::Init();
+	ReplacerManager::LoadNodes();
 	Hooks::Install();
+
+	if (const auto messaging{ SKSE::GetMessagingInterface() }; !messaging->RegisterListener(Listener))
+		return false;
 
 	const auto papyrus = SKSE::GetPapyrusInterface();
 	papyrus->Register(Papyrus::RegisterFunctions);

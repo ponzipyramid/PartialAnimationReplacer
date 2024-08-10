@@ -6,6 +6,8 @@ void ReplacerManager::EvaluateReplacers()
 {
 	auto replacers = std::make_shared<ReplacerMap>();
 
+	std::unique_lock lock{ _mutex };
+
 	std::vector<RE::Actor*> actors{ RE::PlayerCharacter::GetSingleton() };
 	RE::ProcessLists::GetSingleton()->ForEachHighActor([&actors](RE::Actor* a_actor) {
 		if (a_actor->Is3DLoaded()) {
@@ -17,20 +19,18 @@ void ReplacerManager::EvaluateReplacers()
 
 	for (const auto& actor : actors) {
 		if (const auto replacer = FindReplacer(actor)) {
-			replacers->insert({ actor->GetFormID(), replacer });
+			replacers->insert({ actor->GetFormID(), std::make_shared<Replacer>(replacer->GetData()) });
 		}
 	}
 	
 	replacers = _current.exchange(replacers);
-
-	logger::info("EvaluateReplacers");
 }
 
-Replacer* ReplacerManager::FindReplacer(RE::Actor* a_actor)
+std::shared_ptr<Replacer> ReplacerManager::FindReplacer(RE::Actor* a_actor)
 {
 	for (auto& replacer : _replacers) {
-		if (replacer.Eval(a_actor)) {
-			return &replacer;
+		if (replacer->Eval(a_actor)) {
+			return replacer;
 		}
 	}
 
@@ -74,7 +74,7 @@ void ReplacerManager::Init()
 {
 	_current = std::make_shared<ReplacerMap>();
 
-	logger::info("OverrideManager::Init");
+	logger::info("ReplacerManager::Init");
 
 	const std::string dir{ "Data\\SKSE\\PartialAnimationReplacer\\Replacers" };
 	if (fs::exists(dir)) {
@@ -103,6 +103,17 @@ void ReplacerManager::LoadDir(const fs::directory_entry& a_dir)
 	logger::info("loaded {} replacer from directory {}", found, a_dir.path().string());
 }
 
+bool ReplacerManager::ReloadFile(const fs::directory_entry& a_file)
+{
+	std::unique_lock lock{ _mutex };  // prevent read/writes from replacers
+	
+	// invalidate current replacers
+	auto replacers = std::make_shared<ReplacerMap>();
+	replacers = _current.exchange(replacers);
+
+	return LoadFile(a_file);
+}
+
 bool ReplacerManager::LoadFile(const fs::directory_entry& a_file)
 {
 	logger::info("Processing file {}", a_file.path().string());
@@ -124,10 +135,10 @@ bool ReplacerManager::LoadFile(const fs::directory_entry& a_file)
 		Replacer replacer{ r };
 		if (replacer.IsValid(fileName)) {
 			if (_paths.count(fileName)) {
-				_replacers[_paths[fileName]] = replacer;
+				_replacers[_paths[fileName]] = std::make_shared<Replacer>(r);
 			} else {
 				_paths[fileName] = _replacers.size();
-				_replacers.push_back(replacer);
+				_replacers.push_back(std::make_shared<Replacer>(r));
 			}
 		} else if (_paths.count(fileName)) {
 			_replacers.erase(_replacers.begin() + _paths[fileName]);
@@ -150,7 +161,7 @@ void ReplacerManager::LoadNodes()
 	_armNodes = data.get<std::vector<std::string>>();
 }
 
-void ReplacerManager::Dump(RE::Actor* a_actor, std::string a_dir, std::string a_name)
+bool ReplacerManager::Dump(RE::Actor* a_actor, std::string a_dir, std::string a_name)
 {
 	// TODO: add support for multiple frames
 
@@ -159,7 +170,7 @@ void ReplacerManager::Dump(RE::Actor* a_actor, std::string a_dir, std::string a_
 
 	const std::string fileName{ "Data\\SKSE\\PartialAnimationReplacer\\Replacers\\" + a_dir + "\\" + a_name };
 
-	ReplacerData data = _paths.count(fileName) ? _replacers[_paths[fileName]].GetData() : ReplacerData();
+	ReplacerData data = _paths.count(fileName) ? _replacers[_paths[fileName]]->GetData() : ReplacerData();
 
 	data.frames.clear();
 
@@ -168,15 +179,24 @@ void ReplacerManager::Dump(RE::Actor* a_actor, std::string a_dir, std::string a_
 	if (const auto obj = a_actor->Get3D(false)) {
 		for (const auto& nodeName : _armNodes) {
 			if (const auto node = obj->GetObjectByName(nodeName)) {
-				frame.emplace_back(Override{ nodeName, node->local.rotate });
+				frame.emplace_back(Override{ nodeName, node->local.rotate, node->local.translate, node->local.scale });
 			}
 		}
+	} else {
+		logger::error("failed to get 3d");
+		return false;
 	}
+
+	if (frame.empty())
+		return false;
 
 	data.frames.emplace_back(frame);
 
 	json j = data;
 
+	std::string s = j.dump(2);
 	std::ofstream file(fileName);
-	file << j;
+	file << std::setfill(' ') << std::setw(2) << j;
+
+	return true;
 }

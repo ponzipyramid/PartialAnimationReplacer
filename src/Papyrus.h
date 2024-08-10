@@ -2,25 +2,29 @@
 
 #include "ReplacerManager.h"
 
-constexpr std::string_view PapyrusClass = "NodeManipulator";
+constexpr std::string_view PapyrusClass = "PartialAnimationReplacer";
 
 namespace
 {
-	inline void ReloadDir(RE::StaticFunctionTag*, std::string a_name)
+	inline bool Reload(RE::StaticFunctionTag*, std::string a_dir, std::string a_name)
 	{
-		fs::directory_entry entry{ "Data\\SKSE\\PartialAnimationReplacer\\Replacers\\" + a_name };
-		PAR::ReplacerManager::LoadDir(entry);
-	}
+		if (!a_name.ends_with(".json")) {
+			a_name += ".json";
+		}
 
-	inline void ReloadFile(RE::StaticFunctionTag*, std::string a_dir, std::string a_name)
-	{
 		fs::directory_entry entry{ "Data\\SKSE\\PartialAnimationReplacer\\Replacers\\" + a_dir + "\\" + a_name };
-		PAR::ReplacerManager::LoadFile(entry);
+		logger::info("Reload {} {} {}", a_dir, a_name, entry.path().string());
+		return PAR::ReplacerManager::ReloadFile(entry);
 	}
 
-	inline void Dump(RE::StaticFunctionTag*, RE::Actor* a_actor, std::string a_dir, std::string a_name)
+	inline bool Dump(RE::StaticFunctionTag*, RE::Actor* a_actor, std::string a_dir, std::string a_name)
 	{
-		PAR::ReplacerManager::Dump(a_actor, a_dir, a_name);
+		if (!a_name.ends_with(".json")) {
+			a_name += ".json";
+		}
+
+		logger::info("Dump {} {} {}", a_actor->GetFormID(), a_dir, a_name);
+		return PAR::ReplacerManager::Dump(a_actor, a_dir, a_name);
 	}
 }
 
@@ -30,8 +34,7 @@ namespace PAR::Papyrus
 	{
 		#define REGISTERPAPYRUSFUNC(name) vm->RegisterFunction(#name, PapyrusClass, name);
 
-		REGISTERPAPYRUSFUNC(ReloadDir)
-		REGISTERPAPYRUSFUNC(ReloadFile)
+		REGISTERPAPYRUSFUNC(Reload)
 		REGISTERPAPYRUSFUNC(Dump)
 
 		return true;
