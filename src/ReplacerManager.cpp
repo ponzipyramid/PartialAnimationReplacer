@@ -11,7 +11,7 @@ void ReplacerManager::EvaluateReplacers()
 	std::vector<RE::Actor*> actors{ RE::PlayerCharacter::GetSingleton() };
 	RE::ProcessLists::GetSingleton()->ForEachHighActor([&actors](RE::Actor* a_actor) {
 		if (a_actor->Is3DLoaded()) {
-			actors.push_back(a_actor);
+			actors.emplace_back(a_actor);
 		}
 
 		return RE::BSContainer::ForEachResult::kContinue;
@@ -51,10 +51,12 @@ void ReplacerManager::ApplyReplacers(RE::NiAVObject* a_playerObj)
 
 	// apply to NPCs
 	RE::ProcessLists::GetSingleton()->ForEachHighActor([&replacers, &updateData](RE::Actor* a_actor) {
-		const auto obj = a_actor->Get3D(false);
-		if (ApplyReplacer(replacers, a_actor->GetFormID(), obj)) {
-			obj->Update(updateData);
+		if (const auto obj = a_actor->Get3D(false)) {
+			if (ApplyReplacer(replacers, a_actor->GetFormID(), obj)) {
+				obj->Update(updateData);
+			}
 		}
+		
 		return RE::BSContainer::ForEachResult::kContinue;
 	});
 }
@@ -138,7 +140,7 @@ bool ReplacerManager::LoadFile(const fs::directory_entry& a_file)
 				_replacers[_paths[fileName]] = replacer;
 			} else {
 				_paths[fileName] = _replacers.size();
-				_replacers.push_back(replacer);
+				_replacers.emplace_back(replacer);
 			}
 		} else if (_paths.count(fileName)) {
 			_replacers.erase(_replacers.begin() + _paths[fileName]);

@@ -23,8 +23,8 @@ void Hooks::Install()
 {
 	stl::write_thunk_call<UpdateThirdPerson>(REL::RelocationID(39446, 40522).address() + 0x94);
 
-	REL::Relocation<std::uintptr_t> vtbl1{ RE::PlayerCharacter::VTABLE[0] };
-	_UpdatePlayer = vtbl1.write_vfunc(REL::Module::GetRuntime() != REL::Module::Runtime::VR ? 0x0AD : 0x0AF, UpdatePlayer);
+	REL::Relocation<std::uintptr_t> vtbl{ RE::PlayerCharacter::VTABLE[0] };
+	_UpdatePlayer = vtbl.write_vfunc(REL::Module::GetRuntime() != REL::Module::Runtime::VR ? 0x0AD : 0x0AF, UpdatePlayer);
 
 	logger::info("Hooks installed");
 }
