@@ -21,7 +21,11 @@ namespace
 
 void Hooks::Install()
 {
-	stl::write_thunk_call<UpdateThirdPerson>(REL::RelocationID(39446, 40522).address() + 0x94);
+	if (REL::Module::IsVR()) {
+		stl::write_thunk_call<UpdateThirdPerson>(REL::Offset(0x6c6a7d).address());
+	} else {
+		stl::write_thunk_call<UpdateThirdPerson>(REL::RelocationID(39446, 40522).address() + 0x94);
+	}
 
 	REL::Relocation<std::uintptr_t> vtbl{ RE::PlayerCharacter::VTABLE[0] };
 	_UpdatePlayer = vtbl.write_vfunc(REL::Module::GetRuntime() != REL::Module::Runtime::VR ? 0x0AD : 0x0AF, UpdatePlayer);
