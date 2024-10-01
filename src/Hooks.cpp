@@ -1,5 +1,6 @@
 #include "Hooks.h"
 #include "ReplacerManager.h"
+#include "Dumper.h"
 
 using namespace PAR;
 
@@ -7,12 +8,27 @@ namespace
 {
 	constexpr float TIME_DELTA = 1.f;
 
+	void PrintRotation(RE::NiAVObject* a_obj)
+	{
+		if (const auto node = a_obj->GetObjectByName("NPC R Forearm [RLar]")) {
+			float x;
+			float y;
+			float z;
+			node->local.rotate.ToEulerAnglesXYZ(x, y, z);
+			logger::info("Rotation: {} {} {}", x, y, z);
+		}
+	}
+
 	struct UpdateThirdPerson
 	{
 		static void thunk(RE::NiAVObject* a_obj, RE::NiUpdateData* updateData)
 		{
+			//logger::info("start");
+			//PrintRotation(a_obj);
 			ReplacerManager::ApplyReplacers(a_obj);
+			//PrintRotation(a_obj);
 			func(a_obj, updateData);
+			Dumper::OnFrame();
 		}
 		static inline REL::Relocation<decltype(thunk)> func;
 		static inline constexpr std::size_t size{ 5 };

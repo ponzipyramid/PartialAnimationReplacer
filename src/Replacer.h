@@ -7,9 +7,7 @@ namespace PAR
 	struct Override
 	{
 		std::string name;
-		RE::NiMatrix3 rot;
-		RE::NiPoint3 translate;
-		float scale;
+		RE::NiTransform transform;
 	};
 
 	typedef std::vector<Override> Frame;
@@ -64,9 +62,9 @@ namespace PAR
 
 			for (const auto& override : overrides) {
 				if (const auto node = a_obj->GetObjectByName(override.name)) {
-					node->local.rotate = override.rot;
-					node->local.translate = override.translate;
-					node->local.scale = override.scale;
+					node->local.rotate = override.transform.rotate;
+					//node->local.translate = override.translate;
+					//node->local.scale = override.scale;
 				}
 			}
 		}
@@ -116,43 +114,36 @@ namespace PAR
 	{
 		o.name = j.value("name", "");
 
-		o.rot = RE::NiMatrix3{ 
-			j["rotate"].value("x", 0.f), 
-			j["rotate"].value("y", 0.f), 
-			j["rotate"].value("z", 0.f) 
-		};
+		const auto val = j["rotate"].get<std::vector<std::vector<float>>>();
 
-		o.translate = RE::NiPoint3{
+		for (int i = 0; i < 3; i++) {
+			for (int k = 0; k < 3; k++) {
+				o.transform.rotate.entry[i][k] = val[i][k];
+			}
+		}
+
+		o.transform.translate = RE::NiPoint3{
 			j["translate"].value("x", 0.f),
 			j["translate"].value("y", 0.f),
 			j["translate"].value("z", 0.f)
 		};
 
-		o.scale = j.value("scale", 1.f);
+		o.transform.scale = j.value("scale", 1.f);
 	}
 
 	inline void to_json(json& j, const Override& o)
 	{
-		RE::NiPoint3 rot;
-		o.rot.ToEulerAnglesXYZ(rot);
-
 		j = json{ 
 			{ "name", o.name }, 
-			{ "rotate",
-				json{
-					{ "x", rot.x },
-					{ "y", rot.y },
-					{ "z", rot.z },
-				} 
-			},
+			{ "rotate", json{ o.transform.rotate.entry } },
 			{ "translate",
 				json{
-					{ "x", o.translate.x },
-					{ "y", o.translate.y },
-					{ "z", o.translate.z },
+					{ "x", o.transform.translate.x },
+					{ "y", o.transform.translate.y },
+					{ "z", o.transform.translate.z },
 				} 
 			},
-			{ "scale", o.scale }
+			{ "scale", o.transform.scale }
 		};
 	}
 

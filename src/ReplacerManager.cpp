@@ -39,6 +39,9 @@ std::shared_ptr<Replacer> ReplacerManager::FindReplacer(RE::Actor* a_actor)
 
 void ReplacerManager::ApplyReplacers(RE::NiAVObject* a_playerObj)
 {
+	if (!_enabled)
+		return;
+
 	const auto replacers = _current.load();
 
 	// apply to player
@@ -132,9 +135,8 @@ bool ReplacerManager::LoadFile(const fs::directory_entry& a_file)
 
 		std::ifstream f{ fileName };
 		const auto data = json::parse(f);
-		const auto r = data.get<ReplacerData>();
+		const auto replacer = std::make_shared<Replacer>(data.get<ReplacerData>());
 
-		const auto replacer = std::make_shared<Replacer>(r);
 		if (replacer->IsValid(fileName)) {
 			if (_paths.count(fileName)) {
 				_replacers[_paths[fileName]] = replacer;
@@ -153,58 +155,4 @@ bool ReplacerManager::LoadFile(const fs::directory_entry& a_file)
 
 		return false;
 	}
-}
-
-void ReplacerManager::LoadNodes()
-{
-	const std::string fileName{ "Data\\SKSE\\PartialAnimationReplacer\\Config\\arm_nodes.json" };
-	std::ifstream f{ fileName };
-	const auto data = json::parse(f);
-	_armNodes = data.get<std::vector<std::string>>();
-}
-
-bool ReplacerManager::Dump(RE::Actor* a_actor, std::string a_dir, std::string a_name)
-{
-	// TODO: add support for multiple frames
-
-	ReplacerData data;
-
-	const std::string fileName{ "Data\\SKSE\\PartialAnimationReplacer\\Replacers\\" + a_dir + "\\" + a_name };
-	const fs::directory_entry entry{ fileName };
-	if (entry.exists()) {
-		try {
-			std::ifstream f{ fileName };
-			json d;
-			const auto existingData = json::parse(f);
-			data = existingData.get<ReplacerData>();
-		} catch (...) {}
-	}
-
-	data.frames.clear();
-
-	Frame frame;
-
-	if (const auto obj = a_actor->Get3D(false)) {
-		for (const auto& nodeName : _armNodes) {
-			if (const auto node = obj->GetObjectByName(nodeName)) {
-				frame.emplace_back(Override{ nodeName, node->local.rotate, node->local.translate, node->local.scale });
-			}
-		}
-	} else {
-		logger::error("failed to get 3d");
-		return false;
-	}
-
-	if (frame.empty())
-		return false;
-
-	data.frames.emplace_back(frame);
-
-	json j = data;
-
-	std::string s = j.dump(2);
-	std::ofstream file(fileName);
-	file << std::setfill(' ') << std::setw(2) << j;
-
-	return true;
 }

@@ -42,7 +42,6 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	logger::info("Loaded plugin {} {}", Plugin::NAME, Plugin::VERSION.string());
 	SKSE::Init(a_skse);
 
-	ReplacerManager::LoadNodes();
 	Hooks::Install();
 
 	if (const auto messaging{ SKSE::GetMessagingInterface() }; !messaging->RegisterListener(Listener))
