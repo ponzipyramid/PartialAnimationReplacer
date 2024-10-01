@@ -93,6 +93,8 @@ void ReplacerManager::Init()
 	} else {
 		logger::info("replacement dir does not exist");
 	}
+
+	Sort();
 }
 
 void ReplacerManager::LoadDir(const fs::directory_entry& a_dir)
@@ -149,10 +151,19 @@ bool ReplacerManager::LoadFile(const fs::directory_entry& a_file)
 			_paths.erase(fileName);
 		}
 
+		Sort();
+
 		return true;
 	} catch (std::exception& e) {
 		logger::info("failed to load {} - {}", fileName, e.what());
 
 		return false;
 	}
+}
+
+void ReplacerManager::Sort()
+{
+	std::ranges::sort(_replacers, [](const auto& a, const auto& b) {
+		return a->GetPriority() > b->GetPriority();
+	});
 }

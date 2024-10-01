@@ -24,6 +24,8 @@ namespace PAR
 		static std::shared_ptr<Replacer> FindReplacer(RE::Actor* a_actor);
 		static bool ApplyReplacer(const std::shared_ptr<ReplacerMap>& a_map, RE::FormID a_id, RE::NiAVObject* a_obj);
 
+		static void Sort();
+
 		static inline std::vector<std::shared_ptr<Replacer>> _replacers;
 		static inline std::map<std::string, std::size_t> _paths;
 

@@ -111,6 +111,7 @@ namespace PAR
 
 			return valid;
 		}
+		uint64_t GetPriority() { return _priority; }
 	private:
 		uint64_t _priority;
 		std::vector<std::vector<Override>> _frames;
@@ -127,7 +128,7 @@ namespace PAR
 	{
 		o.name = j.value("name", "");
 
-		const auto val = j["rotate"].get<std::vector<std::vector<float>>>();
+		const auto val = j.value("rotate", std::vector<std::vector<float>>{});
 
 		for (int i = 0; i < 3; i++) {
 			for (int k = 0; k < 3; k++) {
