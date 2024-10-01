@@ -52,7 +52,7 @@ auto ConditionParser::Parse(std::string_view a_text, const RefMap& a_refs) -> RE
 	if (mParam2.matched) {
 		if (function->numParams >= 2) {
 			data.functionData.params[1] = std::bit_cast<void*>(
-				ParseParam(mParam1.str(), function->params[1].paramType.get(), a_refs));
+				ParseParam(mParam2.str(), function->params[1].paramType.get(), a_refs));
 		} else {
 			logger::warn("Condition function {} ignoring parameter: {}", function->functionName, mParam2.str());
 		}
@@ -81,6 +81,7 @@ auto ConditionParser::Parse(std::string_view a_text, const RefMap& a_refs) -> RE
 		auto comparand = mComparand.str();
 		if (auto global = RE::TESForm::LookupByEditorID<RE::TESGlobal>(comparand)) {
 			data.comparisonValue.g = global;
+			data.flags.global = true;
 		} else {
 			data.comparisonValue.f = std::stof(comparand);
 		}
