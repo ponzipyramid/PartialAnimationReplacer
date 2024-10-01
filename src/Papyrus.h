@@ -11,7 +11,6 @@ namespace
 {
 	inline void SetEnabled(RE::StaticFunctionTag*, bool a_enabled)
 	{
-		logger::info("SetEnabled - {}", a_enabled);
 		ReplacerManager::SetEnabled(a_enabled);
 	}
 
@@ -22,7 +21,6 @@ namespace
 		}
 
 		fs::directory_entry entry{ "Data\\SKSE\\PartialAnimationReplacer\\Replacers\\" + a_dir + "\\" + a_name };
-		logger::info("Reload {} {} {}", a_dir, a_name, entry.path().string());
 		return ReplacerManager::ReloadFile(entry);
 	}
 
@@ -36,7 +34,6 @@ namespace
 			a_nodes += ".json";
 		}
 
-		logger::info("Dump - {} {} {} {} {} {} {} {}", a_actor->GetFormID(), a_dir, a_name, a_nodes, a_target, a_rotate, a_translate, a_scale);
 		return Dumper::QueueDump(a_actor, a_dir, a_name, a_nodes, a_target, a_rotate, a_translate, a_scale);
 	}
 }

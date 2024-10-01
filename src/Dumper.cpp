@@ -32,19 +32,21 @@ bool Dumper::QueueDump(RE::Actor* a_actor, std::string a_dir, std::string a_name
 
 void Dumper::OnFrame()
 {
-	std::unique_lock lock{ _mutex };
+	if (_mutex.try_lock()) {
+		std::vector<std::string> clear;
 
-	std::vector<std::string> clear;
-
-	for (auto& [id, job] : _jobs) {
-		if (job.Record()) {
-			logger::info("completing job");
-			job.Complete();
-			clear.push_back(id);
+		for (auto& [id, job] : _jobs) {
+			if (job.Record()) {
+				logger::info("completing job {}", id);
+				job.Complete();
+				clear.push_back(id);
+			}
 		}
-	}
 
-	for (const auto& id : clear) {
-		_jobs.erase(id);
+		for (const auto& id : clear) {
+			_jobs.erase(id);
+		}
+
+		_mutex.unlock();
 	}
 }

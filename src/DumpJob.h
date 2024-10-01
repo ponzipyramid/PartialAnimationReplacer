@@ -46,6 +46,9 @@ namespace PAR
 			}
 
 			data.frames = _frames;
+			data.rotate = _rotate;
+			data.translate = _translate;
+			data.scale = _scale;
 
 			json j = data;
 
@@ -55,13 +58,17 @@ namespace PAR
 		}
 	private:
 		RE::Actor* _actor;
+		
 		std::string _dir;
 		std::string _name;
+
 		std::vector<std::string> _nodes;
 		std::vector<Frame> _frames;
+
 		bool _rotate;
 		bool _translate;
 		bool _scale;
+
 		int _target;
 	};
 }

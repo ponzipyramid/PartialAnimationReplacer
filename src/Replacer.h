@@ -16,6 +16,11 @@ namespace PAR
 	{
 		uint64_t priority;
 		std::vector<Frame> frames;
+		
+		bool rotate;
+		bool translate;
+		bool scale;
+
 		std::vector<std::string> conditions;
 		std::unordered_map<std::string, std::string> refs;
 	};
@@ -23,11 +28,9 @@ namespace PAR
 	class Replacer
 	{
 	public:
-		Replacer(const ReplacerData& a_raw)
-		{
-			_priority = a_raw.priority;
-			_frames = a_raw.frames;
-			
+		Replacer(const ReplacerData& a_raw) :
+			_priority(a_raw.priority), _frames(a_raw.frames), _rotate(a_raw.rotate), _translate(a_raw.translate), _scale(a_raw.scale)
+		{	
 			for (const auto& [key, ref] : a_raw.refs) {
 				_refs[key] = Util::GetFormFromString(ref);
 			}
@@ -54,7 +57,7 @@ namespace PAR
 		}
 		inline ReplacerData GetData()
 		{
-			return ReplacerData{ _priority, _frames };
+			return ReplacerData{ _priority, _frames, _rotate, _translate, _scale };
 		}
 		inline void Apply(RE::NiAVObject* a_obj) const
 		{
@@ -62,9 +65,15 @@ namespace PAR
 
 			for (const auto& override : overrides) {
 				if (const auto node = a_obj->GetObjectByName(override.name)) {
-					node->local.rotate = override.transform.rotate;
-					//node->local.translate = override.translate;
-					//node->local.scale = override.scale;
+					if (_rotate) {
+						node->local.rotate = override.transform.rotate;
+					}
+					if (_translate) {
+						node->local.translate = override.transform.translate;
+					}
+					if (_scale) {
+						node->local.scale = override.transform.scale;
+					}
 				}
 			}
 		}
@@ -105,6 +114,10 @@ namespace PAR
 	private:
 		uint64_t _priority;
 		std::vector<std::vector<Override>> _frames;
+
+		bool _rotate;
+		bool _translate;
+		bool _scale;
 
 		std::shared_ptr<RE::TESCondition> _conditions = nullptr;
 		ConditionParser::RefMap _refs;
@@ -153,12 +166,18 @@ namespace PAR
 		r.frames = j.value("frames", std::vector<Frame>{});
 		r.conditions = j.value("conditions", std::vector<std::string>{});
 		r.refs = j.value("refs", std::unordered_map<std::string, std::string>{});
+		r.rotate = j.value("rotate", true);
+		r.translate = j.value("translate", false);
+		r.scale = j.value("scale", false);
 	}
 
 	inline void to_json(json& j, const ReplacerData& r)
 	{
 		j = json{
 			{ "priority", r.priority },
+			{ "rotate", r.rotate },
+			{ "translate", r.translate },
+			{ "scale", r.scale },
 			{ "refs", r.refs },
 			{ "conditions", r.conditions },
 			{ "frames", r.frames }

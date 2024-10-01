@@ -23,10 +23,7 @@ namespace
 	{
 		static void thunk(RE::NiAVObject* a_obj, RE::NiUpdateData* updateData)
 		{
-			//logger::info("start");
-			//PrintRotation(a_obj);
 			ReplacerManager::ApplyReplacers(a_obj);
-			//PrintRotation(a_obj);
 			func(a_obj, updateData);
 			Dumper::OnFrame();
 		}
