@@ -13,7 +13,7 @@ bool Dumper::QueueDump(RE::Actor* a_actor, std::string a_dir, std::string a_name
 		iter->second.Complete();
 	}
 
-	const std::string fileName{ std::format("Data\\SKSE\\PartialAnimationReplacer\\Config\\{}\\{}", a_dir, a_nodes) };
+	const std::string fileName{ std::format("Data\\SKSE\\PartialAnimationReplacer\\Replacers\\{}\\Config\\{}", a_dir, a_nodes) };
 
 	if (!fs::exists(fileName))
 		return false;

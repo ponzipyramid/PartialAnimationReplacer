@@ -149,7 +149,7 @@ namespace PAR
 	{
 		j = json{ 
 			{ "name", o.name }, 
-			{ "rotate", json{ o.transform.rotate.entry } },
+			{ "rotate", o.transform.rotate.entry },
 			{ "translate",
 				json{
 					{ "x", o.transform.translate.x },
